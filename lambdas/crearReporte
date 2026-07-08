@@ -1,0 +1,30 @@
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
+import { randomUUID } from "crypto";
+
+const client = new DynamoDBClient({});
+const docClient = DynamoDBDocumentClient.from(client);
+const TABLE_NAME = process.env.TABLE_NAME;
+
+export const handler = async (event) => {
+  const body = JSON.parse(event.body);
+
+  const item = {
+    reporteId: randomUUID(),
+    latitud: body.latitud,
+    longitud: body.longitud,
+    calle: body.calle ?? null,
+    distrito: body.distrito ?? null,
+    tipo: body.tipo,
+    usuarioId: body.usuarioId,
+    createdAt: new Date().toISOString(),
+  };
+
+  await docClient.send(new PutCommand({ TableName: TABLE_NAME, Item: item }));
+
+  return {
+    statusCode: 200,
+    headers: { "Access-Control-Allow-Origin": "*" },
+    body: JSON.stringify(item),
+  };
+};

@@ -1,0 +1,65 @@
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { DynamoDBDocumentClient, GetCommand } from "@aws-sdk/lib-dynamodb";
+
+const client = new DynamoDBClient({});
+const docClient = DynamoDBDocumentClient.from(client);
+
+export const handler = async (event) => {
+
+    const body = JSON.parse(event.body);
+
+    const correo = body.correo;
+    const contrasena = body.contrasena;
+
+    try {
+
+        const resultado = await docClient.send(
+            new GetCommand({
+                TableName: "Usuarios",
+                Key: {
+                    correo: correo
+                }
+            })
+        );
+
+        if (!resultado.Item) {
+            return {
+                statusCode: 404,
+                body: JSON.stringify({
+                    login: false,
+                    mensaje: "Usuario no encontrado"
+                })
+            };
+        }
+
+        if (resultado.Item.contrasena === contrasena) {
+            return {
+                statusCode: 200,
+                body: JSON.stringify({
+                    login: true,
+                    mensaje: "Inicio de sesión correcto",
+                    nombre: resultado.Item.nombre
+                })
+            };
+        } else {
+            return {
+                statusCode: 401,
+                body: JSON.stringify({
+                    login: false,
+                    mensaje: "Contraseña incorrecta"
+                })
+            };
+        }git add .
+
+    } catch (error) {
+
+        return {
+            statusCode: 500,
+            body: JSON.stringify({
+                error: error.message
+            })
+        };
+
+    }
+
+};
